@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="description" content="Docs">
+    <meta name="keywords" content="HTML,CSS,XML,JavaScript">
+    <meta name="author" content="new">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Help</title>
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <link href="https://fonts.googleapis.com/css?family=Quicksand:500" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <style>
+      .actionInput {
+        margin: 5px;
+      }
+      .categoryInput {
+        width: 99%;
+      }
+      .configTable {
+        width: 100%;
+        font-size: 84%;
+      }
+      
+      .configTable1 {
+        width: 100%;
+        font-size: 84%;
+        background-color: #FBFCFC;
+      }
+      .middle1 {
+        font-size: 84%;
+        color:#1ABC9C;
+      }      
+      .middle {
+        font-size: 90%;
+        color:#FF9966;
+      }      
+      .addon-header {
+        height: 40px;
+        width: 100%;
+        line-height: 50px;
+        font-size: 110% ;
+        text-align: center;
+        background-color: #00BF6F;
+        color: white;
+      }      
+      body {
+        font-family: 'Quicksand', sans-serif;
+        font-size: 90% ;
+        margin-left:6px;
+      }
+      .branding-below {
+        bottom: 10px;
+        top: 0;
+      }
+      .branding-text {
+        left: 6px;
+        position: relative;
+        top: 3px;
+      }
+      .col-contain {
+        overflow: hidden;
+      }
+      .col-one {
+        float: left;
+        width: 80%;
+      }
+      .logo {
+        vertical-align: middle;
+      }
+      .radio-spacer {
+        height: 10px;
+      }
+      .width-100 {
+        width: 98%;
+      }      
+    </style>
+    <style>
+      ul.breadcrumb {
+        padding: 6px 2px;
+        list-style: none;
+        text-align:center;
+        vertical-align: middle;
+        margin: auto;
+        background: #FFEE58;      
+      }
+      ul.breadcrumb li {
+        display: inline;
+        font-size: 14px;
+        height: 30x;
+        line-height: 30px;
+        font-family: 'Quicksand', sans-serif;
+      }
+      ul.breadcrumb li+li:before {
+        padding: 4px;
+        color: gray;
+        content: "-";
+      }
+      ul.breadcrumb li a {
+        color: black;
+        text-decoration: none;
+      }
+      ul.breadcrumb li a:hover {
+        color: DODGERBLUE;
+        text-decoration: underline;
+      }      
+    </style>      
+    <style>
+      #docs-titlebar-share-client-button{
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <table class='configTable1'>
+      <tr>
+        <td><i id='sensitive-label' class="fas fa-info-circle" title="Whether file contains Business Sensitive data?">&nbsp;&nbsp;</i><label id="isSensitiveLabel">Sensitive: <span id='sensitiveStatus'></span></label></td>
+        <td><i id='suggestion-label' class="fas fa-info-circle" title="Based on content of the file and org rules"></i>&nbsp;&nbsp;<label id="suggestedCategoryLabel">Suggestion: <span id='suggestionStatus'></span></label></td>
+      </tr>
+      <tr>
+        <td><i id='place-label' class="fas fa-info-circle" title="Based on sharing settings and org rules">&nbsp;&nbsp;</i><label id="Label">Place: &nbsp;&nbsp;</label></td>
+        <td><i id='compliance-label' class="fas fa-info-circle" title="No = Data not in compliance"></i>&nbsp;&nbsp;<label>Data in Compliance: <span id='complianceStatus'></span></label></td>
+      </tr>
+    </table>
+    <br>
+    <table class='configTable'>         
+      <tr>
+        <td><input type='checkbox' id='boldFooterCheckbox' onchange="encrypt()"/><label for='boldFooterCheckbox'>Redact</label></td>
+        <td><input type='checkbox' id='italicFooterCheckbox' /><label for='italicFooterCheckbox'>Alert</label></td>
+        <td></td>
+      </tr>
+    </table>
+    <p id='lastCell'></p>
+    <script>
+      function updateLastCell(value) {
+        $('#lastCell').html(value);
+      }
+      function updateCompliance(value) {
+        var json = JSON.parse(value);
+//        console.log(['compliance',json.length,json]);
+        if (json.length > 1) {
+          $('#complianceStatus').html('No');
+          $('#compliance-label').attr({title: json.join(', ')});
+        } else if (json.length === 1) {
+          $('#complianceStatus').html('No');
+          $('#compliance-label').attr({title: json[0]});
+        } else {
+          $('#complianceStatus').html('Yes');
+          $('#compliance-label').attr({title: 'None'});
+        }
+      }
+      function updateSensitive(value) {
+        var json = JSON.parse(value);
+//        console.log(['sensitive',json.length,json]);
+        if (json.length > 1) {
+          $('#sensitiveStatus').html('Yes');
+          $('#suggestionStatus').html(json[0]);
+          $('#sensitive-label').attr({title: json.join(', ')});
+        } else if (json.length === 1) { 
+          $('#sensitiveStatus').html('Yes');
+          $('#suggestionStatus').html(json[0]);
+          $('#sensitive-label').attr({title: json[0].toString()});
+        } else {
+          $('#suggestionStatus').html('');
+          $('#sensitiveStatus').html('Internal');
+          $('#sensitive-label').attr({title: 'None'})
+        }
+      }
+      
+      $(document).ready(function() {
+        setInterval(function() {
+          google.script.run.withSuccessHandler(updateLastCell).getLastVal();
+        }, 1000);
+        setInterval(function() {
+          google.script.run.withSuccessHandler(updateCompliance).getComplianceList();
+          google.script.run.withSuccessHandler(updateSensitive).getSensitiveList();
+        }, 3000);
+      });
+    </script>
+  </body>
+</html>
