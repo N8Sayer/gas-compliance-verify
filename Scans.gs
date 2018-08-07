@@ -33,7 +33,6 @@ function scanRange(range) {
         rangeInCompliance = statusObj.inCompliance;
       }
       console.log(statusObj);
-      console.log(nonComplianceObj);
       if (statusObj.inCompliance) {
         var isInList = false;
         ncList.forEach(function(obj, index) {
@@ -41,7 +40,6 @@ function scanRange(range) {
             isInList = index;
           }
         });
-        console.log([isInList, ncList.length]);
         if (typeof isInList == 'number' && ncList.length > 1) {
           if (ncList.length > 1) {          
             ncList.splice(isInList,1);
@@ -83,6 +81,7 @@ function scanRange(range) {
             nonComplianceObj.keywords.push(line[0]);            
           });
         });
+        console.log(nonComplianceObj);
         var ncListCheck = false;
         ncList.forEach(function(obj) {
           if (obj.location.sheet == nonComplianceObj.location.sheet && obj.location.row == nonComplianceObj.location.row && obj.location.col == nonComplianceObj.location.col) {
@@ -121,7 +120,7 @@ function checkCompliance(val) {
     keywordArr.forEach(function(keyword) {
       keywords.push([keyword, keyword]);
     });
-    var failedKeywords = checkMatches(val,keywords);
+    var failedKeywords = checkKeywords(val,keywords);
     var regexArr = category.REGEX;
     var regexes = [];
     regexArr.forEach(function(regStr) {
@@ -130,7 +129,7 @@ function checkCompliance(val) {
       }
     });
 //    console.log([keywords, regexes]);
-    var failedRegex = checkMatches(val,regexes);
+    var failedRegex = checkRegex(val,regexes);
     if (failedKeywords.length > 0 || failedRegex.length > 0) {
       obj.inCompliance = false;
       obj.failed['type'] = obj.failed['type'] ? obj.failed['type'].push(category.segment) : [category.segment];
@@ -143,20 +142,31 @@ function checkCompliance(val) {
   return obj;  
 }
 
-function checkMatches(str, matchArr) {
+function checkKeywords(str, matchArr) {
   var matches = [];
   matchArr.forEach(function(matchStr) {
 //    console.log(matchStr);
     if (matchStr[0]) {
-      if (typeof matchStr[0] == 'object') {
-        var regex = new RegExp(matchStr[0],'gmi');
+      if (str.match(/\W/g)) {
+        var regex = new RegExp('\W' + matchStr[0] + '\W','gmi');
       } else {
-        if (str.match(/\W/g)) {
-          var regex = new RegExp('\W' + keyword + '\W','gmi');
-        } else {
-          var regex = new RegExp('^'+ matchStr[0] +'$','gmi');          
-        }
+        var regex = new RegExp('^'+ matchStr[0] +'$','gmi');          
       }
+      var match = str.match(regex);
+      if (match) {
+        matches.push([matchStr[1], match.join(', ')]);
+      }
+    }
+  });
+  return matches;
+}
+
+function checkRegex(str, matchArr) {
+  var matches = [];
+  matchArr.forEach(function(matchStr) {
+//    console.log(matchStr);
+    if (matchStr[0]) {
+      var regex = new RegExp(matchStr[0],'gmi');
       var match = str.match(regex);
       if (match) {
         matches.push([matchStr[1], match.join(', ')]);
