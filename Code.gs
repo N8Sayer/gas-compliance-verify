@@ -11,11 +11,10 @@ function onOpen(e) {
     var menu = ui.createMenu('Check Not Installed');
   } else {
     var menu = ui.createMenu('Auto Help');  
-    sidebarOnOpen();
+    sidebarOnOpen(e.authMode);
   }
-  menu.addItem('Sheets Help', 'sidebarOnOpen').addToUi();
-  
-//  scanFile();
+  menu.addItem('Sheets Help', 'sidebarOnOpen').addToUi();  
+  scanFile();
 }
 
 function onEdit(e) {
@@ -25,16 +24,17 @@ function onEdit(e) {
 }
 
 function onInstall(e) {
-  onOpen(e);
   installTriggers();
+  onOpen(e);
 }
 
 /************************************************************************
 * Function (Trigger) to open the sidebar when user opens the file
 **************************************************************************/
 
-function sidebarOnOpen() {
+function sidebarOnOpen(authmode) {
   Logger.log('Open Sidebar');
+  Logger.log(authmode);
   try {
     var html = HtmlService.createHtmlOutputFromFile("Main").setTitle('Sheets Help');
     ui.showSidebar(html);

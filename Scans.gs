@@ -7,7 +7,7 @@ function scanFile() {
 }
 
 function test() {
-  var range = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Requirements').getRange('D4:D6');
+  var range = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Requirements').getRange('D8:D11');
   scanRange(range);
 }
 
@@ -35,7 +35,6 @@ function scanRange(range) {
       console.log(statusObj);
       console.log(nonComplianceObj);
       if (statusObj.inCompliance) {
-        colors[rowIndex][colIndex] = null;
         var isInList = false;
         ncList.forEach(function(obj, index) {
           if (obj.location.sheet == nonComplianceObj.location.sheet && obj.location.row == nonComplianceObj.location.row && obj.location.col == nonComplianceObj.location.col) {
@@ -44,11 +43,12 @@ function scanRange(range) {
         });
         console.log([isInList, ncList.length]);
         if (typeof isInList == 'number' && ncList.length > 1) {
-          console.log('normal splice');
-          ncList.splice(isInList,1);
-        } else if (typeof isInList == 'number') {
-          console.log('final splice');
-          ncList = [];
+          if (ncList.length > 1) {          
+            ncList.splice(isInList,1);
+          } else {         
+            ncList = [];
+          }
+          colors[rowIndex][colIndex] = null;
         }
       } else {
         colors[rowIndex][colIndex] = statusObj.failed.color;
@@ -59,8 +59,8 @@ function scanRange(range) {
             return a > b ? 1 : -1;
           }
         });
-        var ncKeywords = [];
-        var ncRegex = [];
+        nonComplianceObj.keywords = [];
+        nonComplianceObj.regex = [];
         categories.forEach(function(cat) {
           var regex = statusObj.failed.categories[cat].regex.sort(function(a,b) {
             if (a[0] === b[0]) {
@@ -70,7 +70,7 @@ function scanRange(range) {
             }
           });
           regex.forEach(function(line) {
-            ncRegex.push(line[0]);            
+            nonComplianceObj.regex.push(line[0]);            
           });
           var keywords = statusObj.failed.categories[cat].keywords.sort(function(a,b) {
             if (a[0] === b[0]) {
@@ -80,17 +80,19 @@ function scanRange(range) {
             }
           });
           keywords.forEach(function(line) {
-            ncKeywords.push(line[0]);            
+            nonComplianceObj.keywords.push(line[0]);            
           });
         });
-        nonComplianceObj.keywords = ncKeywords;
-        nonComplianceObj.regex = ncRegex;
+        var ncListCheck = false;
         ncList.forEach(function(obj) {
           if (obj.location.sheet == nonComplianceObj.location.sheet && obj.location.row == nonComplianceObj.location.row && obj.location.col == nonComplianceObj.location.col) {
-            obj.keywords = nonComplianceObj.keywords;
-            obj.regex = nonComplianceObj.regex;
+            obj = nonComplianceObj;
+            ncListCheck = true;
           }
         });
+        if (!ncListCheck) {
+          ncList.push(nonComplianceObj);
+        }
       }
     });
   });    
