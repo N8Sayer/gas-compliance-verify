@@ -7,7 +7,7 @@ function scanFile() {
 }
 
 function test() {
-  var range = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Requirements').getRange('D8:D11');
+  var range = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Requirements').getRange('D4:D5');
   scanRange(range);
 }
 
@@ -119,7 +119,7 @@ function checkCompliance(val) {
     var keywordArr = category.Keywords;
     var keywords = [];
     keywordArr.forEach(function(keyword) {
-      keywords.push(['[\\s+\\,\\.\\?\\!\\:\\(\\)]?' + keyword + '[\\s+\\,\\.\\?\\!\\:\\(\\)]?', keyword]);
+      keywords.push([keyword, keyword]);
     });
     var failedKeywords = checkMatches(val,keywords);
     var regexArr = category.REGEX;
@@ -148,7 +148,15 @@ function checkMatches(str, matchArr) {
   matchArr.forEach(function(matchStr) {
 //    console.log(matchStr);
     if (matchStr[0]) {
-      var regex = new RegExp(matchStr[0],'gmi');
+      if (typeof matchStr[0] == 'object') {
+        var regex = new RegExp(matchStr[0],'gmi');
+      } else {
+        if (str.match(/\W/g)) {
+          var regex = new RegExp('\W' + keyword + '\W','gmi');
+        } else {
+          var regex = new RegExp('^'+ matchStr[0] +'$','gmi');          
+        }
+      }
       var match = str.match(regex);
       if (match) {
         matches.push([matchStr[1], match.join(', ')]);
