@@ -6,6 +6,8 @@ var DEFAULT_CONFIGURATION = {
     "cname" : "Vigor", 
     "fnamefull": "Restricted - Distribution Restricted",
     "color": '#DC143C',
+    "keywordColor": '#DC143C',
+    "regexColor": '#DC143C',
     "Keywords": ['QBR','Flash','Finpack','trade secrets','IP','Patent','Board of directors','formula','EVP'],
     "REGEX": ['SSN','Bank Routing','Patent','MRN','Passport','zip','ein'],
     "Rank": 1
@@ -65,7 +67,7 @@ var REGEX_PATTERNS = {
   "dea": "^\\S{2}\\d{7}$",
   "pmail": "(\\W|^)[\\w.\\-]{0,25}@(yahoo|hotmail|gmail|rediff|outlook|msn|twc|spectrum)\\.com(\\W|$)",
   "po": "(\\W|^)po[#\\-]{0,1}\\s{0,1}\\d{2}[\\s-]{0,1}\\d{4}(\\W|$)",
-//  "words": "(?i)(\\W|^)(baloney|darn|surgery|drat|genetics|genom|fooey|gosh|darnit|heck)(\\W|$)",
+  "words": "(\\W|^)(baloney|darn|surgery|drat|genetics|genome|fooey|gosh|darnit|heck)(\\W|$)",
   "itin": "^(9\\d{2})([\\s\\-]?)([7]\\d|8[0-8])([\\s\\-]?)(\\d{4})$",
   "image": "([^\\s]+(?=\\.(jpg|gif|png))\\.\\2)",
   "ein": "^(0[1-6]|1[0-6]|2[0-7]|[345]\\d|[68][0-8]|7[1-7]|9[0-58-9])-?\\d{7}$",

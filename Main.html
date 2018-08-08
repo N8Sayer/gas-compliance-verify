@@ -163,8 +163,8 @@
           $('#suggestionStatus').html(json[0]);
           $('#sensitive-label').attr({title: json[0].toString()});
         } else {
-          $('#suggestionStatus').html('');
-          $('#sensitiveStatus').html('Internal');
+          $('#sensitiveStatus').html('-');
+          $('#suggestionStatus').html('Internal');
           $('#sensitive-label').attr({title: 'None'})
         }
       }

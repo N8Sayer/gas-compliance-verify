@@ -81,7 +81,7 @@ function scanRange(range) {
             nonComplianceObj.keywords.push(line[0]);            
           });
         });
-        console.log(nonComplianceObj);
+//        console.log(nonComplianceObj);
         var ncListCheck = false;
         ncList.forEach(function(obj) {
           if (obj.location.sheet == nonComplianceObj.location.sheet && obj.location.row == nonComplianceObj.location.row && obj.location.col == nonComplianceObj.location.col) {
@@ -118,7 +118,7 @@ function checkCompliance(val) {
     var keywordArr = category.Keywords;
     var keywords = [];
     keywordArr.forEach(function(keyword) {
-      keywords.push([keyword, keyword]);
+      keywords.push([keyword, category.segment]);
     });
     var failedKeywords = checkKeywords(val,keywords);
     var regexArr = category.REGEX;
@@ -143,18 +143,21 @@ function checkCompliance(val) {
 }
 
 function checkKeywords(str, matchArr) {
+  str = str.trim();
   var matches = [];
   matchArr.forEach(function(matchStr) {
 //    console.log(matchStr);
     if (matchStr[0]) {
-      if (str.match(/\W/g)) {
-        var regex = new RegExp('\W' + matchStr[0] + '\W','gmi');
+      if (str.toLowerCase() == matchStr[0].toLowerCase()) {
+        matches.push([matchStr[1], str]);
       } else {
-        var regex = new RegExp('^'+ matchStr[0] +'$','gmi');          
-      }
-      var match = str.match(regex);
-      if (match) {
-        matches.push([matchStr[1], match.join(', ')]);
+        var regex = new RegExp('/^.*?(?:\\b|_)(' + matchStr[0] + ')(?:\\b|_).*?$/','gmi');
+//        var regex = new RegExp('^[\\W\\w]*(' + matchStr[0] + ')[\\W\\w]*$','gmi');
+        var match = str.match(regex);
+        if (match) {
+          console.log(match);
+          matches.push([matchStr[1], match.join(', ')]);
+        }
       }
     }
   });
@@ -187,8 +190,8 @@ function updateNonCompliantFields() {
     keywords.forEach(function(keyword) {
       Object.keys(DEFAULT_CONFIGURATION).forEach(function(key) {
         var category = DEFAULT_CONFIGURATION[key];
-        var catKeywords = category.Keywords;
-        if (catKeywords.indexOf(keyword) !== -1) {
+        var segment = category.segment;
+        if (keyword == segment) {
           keywordList.push([category.rank,keyword]);
         }
       });

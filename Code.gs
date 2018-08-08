@@ -5,7 +5,7 @@
 var ui = SpreadsheetApp.getUi();
 
 function onOpen(e) {
-  Logger.log(e);
+  console.log(e.authMode);
   // Setup Menus
   if (e && e.authMode == ScriptApp.AuthMode.NONE) {
     var menu = ui.createMenu('Check Not Installed');
@@ -49,7 +49,6 @@ function sidebarOnOpen(authmode) {
 
 function showSidebar() {
   var sidebar = HtmlService.createTemplateFromFile('Main').evaluate().setTitle('Sheets Help');
-  
   ui.showSidebar(sidebar);
 }
 
