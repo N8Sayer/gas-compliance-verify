@@ -151,12 +151,11 @@ function checkKeywords(str, matchArr) {
       if (str.toLowerCase() == matchStr[0].toLowerCase()) {
         matches.push([matchStr[1], str]);
       } else {
-        var regex = new RegExp('/^.*?(?:\\b|_)(' + matchStr[0] + ')(?:\\b|_).*?$/','gmi');
-//        var regex = new RegExp('^[\\W\\w]*(' + matchStr[0] + ')[\\W\\w]*$','gmi');
-        var match = str.match(regex);
+        var regex = new RegExp('^.*?(?:\\b|_)(' + matchStr[0] + ')(?:\\b|_).*?$','mi');
+        var match = regex.match(str);
         if (match) {
           console.log(match);
-          matches.push([matchStr[1], match.join(', ')]);
+          matches.push([matchStr[1], match.slice(1).join(', ')]);
         }
       }
     }
