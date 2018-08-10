@@ -7,7 +7,7 @@ function scanFile() {
 }
 
 function test() {
-  var range = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Requirements').getRange('D4:D5');
+  var range = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Requirements').getRange('D12:D13');
   scanRange(range);
 }
 
@@ -51,35 +51,29 @@ function scanRange(range) {
       } else {
         colors[rowIndex][colIndex] = statusObj.failed.color;
         var categories = Object.keys(statusObj.failed.categories).sort(function(a,b) {
-          if (a === b) {
+          var objA = statusObj.failed.categories[a];
+          var objB = statusObj.failed.categories[b];
+          if (objA.rank === objB.rank) {
             return 0;
           } else {
-            return a > b ? 1 : -1;
+            return objA.rank > objB.rank ? 1 : -1;
           }
         });
         nonComplianceObj.keywords = [];
         nonComplianceObj.regex = [];
         categories.forEach(function(cat) {
-          var regex = statusObj.failed.categories[cat].regex.sort(function(a,b) {
-            if (a[0] === b[0]) {
-              return 0;
-            } else {
-              return a[0] > b[0] ? 1 : -1;
-            }
-          });
-          regex.forEach(function(line) {
-            nonComplianceObj.regex.push(line[0]);            
-          });
-          var keywords = statusObj.failed.categories[cat].keywords.sort(function(a,b) {
-            if (a[0] === b[0]) {
-              return 0;
-            } else {
-              return a[0] > b[0] ? 1 : -1;
-            }
-          });
-          keywords.forEach(function(line) {
-            nonComplianceObj.keywords.push(line[0]);            
-          });
+          var regex = statusObj.failed.categories[cat].regex;
+          if (regex) {
+            regex.forEach(function(regName) {
+              nonComplianceObj.regex.push([regName, statusObj.failed.categories[cat].rank]);
+            });
+          }
+          var keywords = statusObj.failed.categories[cat].keywords;
+          if (keywords) {
+            keywords.forEach(function(keyword) {
+              nonComplianceObj.keywords.push([keyword, statusObj.failed.categories[cat].rank]);
+            });
+          }
         });
 //        console.log(nonComplianceObj);
         var ncListCheck = false;
@@ -100,7 +94,7 @@ function scanRange(range) {
   updateNonCompliantFields();
 }
 
-function checkCompliance(val) {
+function checkCompliance(cellVal) {
   var obj = {
     inCompliance: true,
     passed: {
@@ -113,69 +107,74 @@ function checkCompliance(val) {
     }
   };
   var config = getDefaultConfiguration();
-  Object.keys(config).forEach(function(categoryName) {
-    var category = config[categoryName];    
-    var keywordArr = category.Keywords;
-    var keywords = [];
-    keywordArr.forEach(function(keyword) {
-      keywords.push([keyword, category.segment]);
-    });
-    var failedKeywords = checkKeywords(val,keywords);
-    var regexArr = category.REGEX;
-    var regexes = [];
-    regexArr.forEach(function(regStr) {
-      if (REGEX_PATTERNS[regStr]) {
-        regexes.push([REGEX_PATTERNS[regStr],regStr]);
+  var categories = Object.keys(config).sort(function(a,b) {
+    if (config[a].Rank === config[b].Rank) {
+      return 0;
+    } else {
+      return config[a].Rank > config[b].Rank ? 1 : -1;
+    }
+  });
+  console.log(categories);
+  categories.forEach(function(categoryName) {
+    var category = config[categoryName];  
+    var failedKeywords = [];
+    category.Keywords.forEach(function(keyword) {
+      var match = doesKeywordMatch(cellVal, keyword);
+      if (match) {
+        failedKeywords.push(keyword);
       }
     });
-//    console.log([keywords, regexes]);
-    var failedRegex = checkRegex(val,regexes);
-    if (failedKeywords.length > 0 || failedRegex.length > 0) {
+    var failedRegex = [];
+    category.REGEX.forEach(function(regStr) {
+      var regexPattern = REGEX_PATTERNS[regStr];
+      if (regexPattern) {
+        var match = doesRegexMatch(cellVal,regexPattern);
+        if (match) {
+          failedRegex.push(regStr);
+        }
+      }
+    });
+    if (failedKeywords.length || failedRegex.length) {
       obj.inCompliance = false;
-      obj.failed['type'] = obj.failed['type'] ? obj.failed['type'].push(category.segment) : [category.segment];
-      obj.failed['color'] = obj.failed['color'] ? obj.failed['color'] : category.color;
-      obj.failed.categories[categoryName] = obj.failed.categories[categoryName] ? obj.failed.categories[categoryName] : {};
-      obj.failed.categories[categoryName]['keywords'] = failedKeywords;
-      obj.failed.categories[categoryName]['regex'] = failedRegex;
+      // Prioritize Regex over Keywords for coloring.
+      if (failedRegex.length) {
+        obj.failed['color'] = category.regexColor;
+      } else {
+        obj.failed['color'] = category.keywordColor;
+      }
+      obj.failed.categories[category.segment] = obj.failed.categories[category.segment] ? obj.failed.categories[category.segment] : {};
+      obj.failed.categories[category.segment]['keywords'] = failedKeywords;
+      obj.failed.categories[category.segment]['regex'] = failedRegex;
+      obj.failed.categories[category.segment]['rank'] = category.Rank;
     }
   });
   return obj;  
 }
 
-function checkKeywords(str, matchArr) {
-  str = str.trim();
-  var matches = [];
-  matchArr.forEach(function(matchStr) {
-//    console.log(matchStr);
-    if (matchStr[0]) {
-      if (str.toLowerCase() == matchStr[0].toLowerCase()) {
-        matches.push([matchStr[1], str]);
-      } else {
-        var regex = new RegExp('^.*?(?:\\b|_)(' + matchStr[0] + ')(?:\\b|_).*?$','mi');
-        var match = regex.match(str);
-        if (match) {
-          console.log(match);
-          matches.push([matchStr[1], match.slice(1).join(', ')]);
-        }
+function doesKeywordMatch(strToMatch, keyword) {
+  strToMatch = strToMatch.trim();
+  if (keyword) {
+    if (strToMatch.toLowerCase() == keyword.toLowerCase()) {
+      return true;
+    } else {
+      var regex = new RegExp('^.*?(?:\\b|_)(' + keyword + ')(?:\\b|_).*?$','mi');
+      var match = regex.exec(strToMatch);
+      if (match) {
+        return true;
       }
     }
-  });
-  return matches;
+  }
+  return false;
 }
 
-function checkRegex(str, matchArr) {
-  var matches = [];
-  matchArr.forEach(function(matchStr) {
-//    console.log(matchStr);
-    if (matchStr[0]) {
-      var regex = new RegExp(matchStr[0],'gmi');
-      var match = str.match(regex);
-      if (match) {
-        matches.push([matchStr[1], match.join(', ')]);
-      }
-    }
-  });
-  return matches;
+function doesRegexMatch(strToMatch, regexStr) {
+  strToMatch = strToMatch.trim();
+  var regex = new RegExp(regexStr,'gmi');
+  var match = strToMatch.match(regex);
+  if (match) {
+    return true;
+  }
+  return false;
 }
 
 function updateNonCompliantFields() {
@@ -184,38 +183,32 @@ function updateNonCompliantFields() {
   var keywordList = [];
   var regexList = [];
   ncObjs.forEach(function(obj) {
-    var keywords = obj.keywords;
-    var regexes = obj.regex;
-    keywords.forEach(function(keyword) {
-      Object.keys(DEFAULT_CONFIGURATION).forEach(function(key) {
-        var category = DEFAULT_CONFIGURATION[key];
-        var segment = category.segment;
-        if (keyword == segment) {
-          keywordList.push([category.rank,keyword]);
+    if (obj.keywords) {
+      var keywords = obj.keywords.sort(function(a,b) {
+        if (a[1] === b[1]) {
+          return 0;
+        } else {
+          return a[1] > b[1] ? 1 : -1;
         }
       });
-    });
-    regexes.forEach(function(regex) {
-      Object.keys(DEFAULT_CONFIGURATION).forEach(function(key) {
-        var category = DEFAULT_CONFIGURATION[key];
-        var catRegex = category.REGEX;
-        if (catRegex.indexOf(regex) !== -1) {
-          regexList.push([category.Rank,regex]);
+      keywordList = keywordList.length ? keywordList.concat(keywords) : keywords;
+    }
+    if (obj.regex) {
+      var regexes = obj.regex.sort(function(a,b) {
+        if (a[1] === b[1]) {
+          return 0;
+        } else {
+          return a[1] > b[1] ? 1 : -1;
         }
       });
-    });
+      regexList = regexList.length ? regexList.concat(regexes) : regexes;
+    }
   });
   keywordList.sort(function(a,b) {
     if (a[1] === b[1]) {
       return 0;
     } else {
       return a[1] > b[1] ? 1 : -1;
-    }
-  }).sort(function(a,b) {
-    if (a[0] === b[0]) {
-      return 0;
-    } else {
-      return a[0] > b[0] ? 1 : -1;
     }
   });
   regexList.sort(function(a,b) {
@@ -224,18 +217,12 @@ function updateNonCompliantFields() {
     } else {
       return a[1] > b[1] ? 1 : -1;
     }
-  }).sort(function(a,b) {
-    if (a[0] === b[0]) {
-      return 0;
-    } else {
-      return a[0] > b[0] ? 1 : -1;
-    }
   });
   keywordList = keywordList.map(function(row) {
-    return row[1];
+    return row[0];
   });
   regexList = regexList.map(function(row) {
-    return row[1];
+    return row[0];
   });
   PropertiesService.getDocumentProperties().setProperty('nonCompliantKeywords', JSON.stringify(keywordList));
   PropertiesService.getDocumentProperties().setProperty('nonCompliantRegex', JSON.stringify(regexList));

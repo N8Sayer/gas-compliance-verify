@@ -41,7 +41,7 @@ var DEFAULT_CONFIGURATION = {
     "cname" : "Vigor",
     "fnamefull": "Internal",
     "color": '#40E0D0',
-    "Keywords": ['Business proposal','Meeting','SOP'], // Why do we have Business Proposal down here in Cat4 as well?
+    "Keywords": ['ariba','Meeting','SOP'],
     "REGEX": ['phone'],
     "Rank": 4
   },
